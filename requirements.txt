@@ -1,0 +1,9 @@
+# Lower bounds, not exact pins. Exact pins meant pip tried to compile
+# matplotlib and numpy from source on newer Pythons that had no wheel yet.
+psycopg[binary]>=3.1
+pika>=1.3
+fastapi>=0.110
+uvicorn[standard]>=0.27
+matplotlib>=3.8
+pytest>=8.0
+httpx>=0.27

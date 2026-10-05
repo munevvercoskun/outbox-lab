@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# results/ is COMMITTED on purpose -- the numbers are the point of the repo.
+# Regenerate with `make all`; they will be YOUR machine's numbers.
+
+.vscode/
+.idea/
+.DS_Store
