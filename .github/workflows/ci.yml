@@ -1,0 +1,50 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  chaos:
+    runs-on: ubuntu-latest
+
+    # A real Postgres. The whole lab is about transaction boundaries, and a
+    # fake database would not have any.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: outboxlab
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      OUTBOX_DSN: "host=localhost port=5432 dbname=outboxlab user=postgres password=postgres"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      # These assert that the naive version STILL BREAKS. If fault injection
+      # ever stops working, this is what catches it -- a green suite that
+      # proves nothing is the failure mode worth guarding against.
+      - name: Tests
+        run: python -m pytest
+
+      - name: Chaos scenarios
+        run: make chaos ORDERS=200
+
+      - name: Relay comparison
+        run: make relay ORDERS=200
+
+      - name: README must already match results/
+        run: make report
