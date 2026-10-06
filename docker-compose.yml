@@ -1,0 +1,80 @@
+# Five processes, so you can kill them individually and watch what survives.
+#
+#   docker compose up --build
+#   curl -X POST localhost:8000/orders -H 'content-type: application/json' \
+#        -d '{"customer_id": 1, "amount_cents": 1999}'
+#   docker compose kill worker        # mid-message, no acknowledgement
+#   docker compose start worker
+#   curl localhost:8000/invariants
+#
+# Set MODE=naive on api and worker to watch the same kills lose and duplicate.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: outboxlab
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports: ["5672:5672", "15672:15672"]   # 15672 is the web UI, guest/guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build: .
+    command: python -c "import db; db.reset_schema(); print('schema ready')"
+    environment: &env
+      OUTBOX_DSN: host=postgres port=5432 dbname=outboxlab user=postgres password=postgres
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      MODE: ${MODE:-guarded}
+      PYTHONPATH: /app/src
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    build: .
+    environment: *env
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate:  {condition: service_completed_successfully}
+    healthcheck:
+      # Liveness only. Deliberately does not touch Postgres -- a liveness probe
+      # that tests a dependency restarts every copy during a dependency blip.
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  relay:
+    build: .
+    command: python src/run_relay.py
+    environment: *env
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate:  {condition: service_completed_successfully}
+    stop_grace_period: 10s
+
+  worker:
+    build: .
+    command: python src/run_worker.py
+    environment: *env
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate:  {condition: service_completed_successfully}
+    stop_grace_period: 10s
