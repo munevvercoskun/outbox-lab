@@ -1,0 +1,38 @@
+{
+  "none": {
+    "point": null,
+    "rate": 0.0,
+    "duplicates": false,
+    "describes": "No failures at all. Both versions should be perfect here"
+  },
+  "crash_after_commit": {
+    "point": "after_commit_before_publish",
+    "rate": 0.3,
+    "duplicates": false,
+    "describes": "The service dies between saving the order and publishing the event"
+  },
+  "crash_before_ack": {
+    "point": "after_work_before_ack",
+    "rate": 0.3,
+    "duplicates": false,
+    "describes": "The worker dies after doing the work, before acknowledging"
+  },
+  "relay_crash": {
+    "point": "relay_after_publish_before_mark",
+    "rate": 0.3,
+    "duplicates": false,
+    "describes": "The relay dies after publishing, before recording that it did"
+  },
+  "duplicate_delivery": {
+    "point": null,
+    "rate": 0.0,
+    "duplicates": true,
+    "describes": "The broker delivers every message twice"
+  },
+  "everything": {
+    "point": "after_work_before_ack",
+    "rate": 0.3,
+    "duplicates": true,
+    "describes": "Worker crashes AND duplicate deliveries, together"
+  }
+}

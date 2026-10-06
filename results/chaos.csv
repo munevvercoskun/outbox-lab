@@ -1,0 +1,13 @@
+orders,emails,missing,duplicated,orphans,outbox_unpublished,dead_letters,ok,mode,scenario,seed,published,delivered,crashes
+500,500,0,0,0,0,0,True,naive,none,7,500,500,0
+500,500,0,0,0,0,0,True,guarded,none,7,500,500,0
+500,332,168,0,0,0,0,False,naive,crash_after_commit,7,332,332,168
+500,500,0,0,0,0,0,True,guarded,crash_after_commit,7,500,500,168
+500,755,0,255,0,0,0,False,naive,crash_before_ack,7,500,755,255
+500,500,0,0,0,0,0,True,guarded,crash_before_ack,7,500,668,168
+500,500,0,0,0,0,0,True,naive,relay_crash,7,500,500,0
+500,500,0,0,0,0,0,True,guarded,relay_crash,7,755,755,255
+500,1000,0,500,0,0,0,False,naive,duplicate_delivery,7,1000,1000,0
+500,500,0,0,0,0,0,True,guarded,duplicate_delivery,7,1000,1000,0
+500,1490,0,990,0,0,0,False,naive,everything,7,1000,1490,490
+500,500,0,0,0,0,0,True,guarded,everything,7,1000,1168,168
